@@ -92,6 +92,7 @@ Return ONLY the SQL query."""
         api_key = self.groq_key or settings.groq_api_key
         if not api_key:
             return None
+        fallback_model = "openai/gpt-oss-120b"
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
@@ -103,6 +104,18 @@ Return ONLY the SQL query."""
         }
         async with httpx.AsyncClient(timeout=30, base_url="https://api.groq.com") as client:
             resp = await client.post("/openai/v1/chat/completions", json=body, headers=headers)
+            if resp.status_code == 404 and self.groq_model != fallback_model:
+                try:
+                    error = resp.json().get("error", {})
+                except ValueError:
+                    error = {}
+                if error.get("code") == "model_not_found":
+                    print(
+                        f"GROQ model {self.groq_model!r} is unavailable; "
+                        f"retrying with {fallback_model!r}"
+                    )
+                    body["model"] = fallback_model
+                    resp = await client.post("/openai/v1/chat/completions", json=body, headers=headers)
             if resp.status_code != 200:
                 print(f"GROQ call failed status={resp.status_code} body={resp.text[:200]}")
                 return None
