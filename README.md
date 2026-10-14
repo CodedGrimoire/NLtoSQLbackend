@@ -37,7 +37,7 @@ FIREBASE_PROJECT_ID=your-project-id
 LOG_LEVEL=INFO
 DEV_MODE=True
 GROQ_API_KEY=sk-...
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_MODEL=openai/gpt-oss-120b
 EOF
 
 # DB (docker)
