@@ -170,10 +170,10 @@ Query quality rules:
  * If the question uses "who is", "which", or "top", assume a ranking intent and use ORDER BY with aggregates where appropriate.
 
 Examples:
-- "How many laptops were sold in total?" ->
-  SELECT SUM(units_sold) AS total_units FROM <table_name> WHERE LOWER(product) = LOWER('laptop');
-- "What is the total revenue in Asia?" ->
-  SELECT SUM(revenue) AS total_revenue FROM <table_name> WHERE LOWER(region) = LOWER('asia');
+- "How many laptops were sold in total?" -> sum the units-sold column and filter the product column for laptop, using the exact table name from the schema.
+- "What is the total revenue in Asia?" -> sum the revenue column and filter the region column for Asia, using the exact table name from the schema.
+
+Never output placeholders such as <table_name> or {{table}}. Use the exact table name from the schema.
 
 Edge case handling:
 If the question cannot be answered using the available columns in the schema, return:

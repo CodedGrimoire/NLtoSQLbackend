@@ -279,6 +279,19 @@ def _extract_tables(sql: str) -> set[str]:
     return tables
 
 
+def _resolve_table_placeholders(sql: str, table_name: str) -> str:
+    """Replace table placeholders sometimes echoed from the SQL generation prompt."""
+    # Match quoted and unquoted forms so the replacement is always a valid,
+    # safely quoted identifier. Dataset table names are generated internally.
+    placeholder = re.compile(
+        r"(?:\"(?:<table_name>|\{\{table(?:_name)?\}\})\"|"
+        r"'(?:<table_name>|\{\{table(?:_name)?\}\})'|"
+        r"<table_name>|\{\{table(?:_name)?\}\})",
+        re.IGNORECASE,
+    )
+    return placeholder.sub(lambda _match: f'"{table_name}"', sql)
+
+
 async def _get_metadata(session: AsyncSession, dataset_id: str, table_name: str) -> Dict[str, Any]:
     if dataset_id in _metadata_cache:
         return _metadata_cache[dataset_id]
@@ -891,6 +904,7 @@ async def query_dataset(
             intent_hint = f"\nIntent: {intent}" if intent else ""
             sql_text = await generate_sql(schema_context=schema_ctx_str, question=body.question + extra_hint + intent_hint)
         sql_text = sql_text.replace("`sql", "").replace("`", "").strip()
+        sql_text = _resolve_table_placeholders(sql_text, ds.table_name)
         validation_error = _validate_sql_against_schema(sql_text, allowed_tables, table_columns, allowed_pairs)
         if not validation_error:
             break
